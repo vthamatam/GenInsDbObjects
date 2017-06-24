@@ -1,0 +1,112 @@
+GENERAL INFORMATION SECTION
+-------------------------------------------------------------------------------
+Tuning Task Name                  : TASK_2666
+Tuning Task Owner                 : SH
+Scope                             : COMPREHENSIVE
+Time Limit(seconds)               : 1800
+Completion Status                 : COMPLETED
+Started at                        : 06/24/2017 16:26:24
+Completed at                      : 06/24/2017 16:26:28
+Number of Statistic Findings      : 1
+Number of Index Findings          : 1
+
+-------------------------------------------------------------------------------
+Schema Name: SH
+SQL ID     : 552yy42gzhc22
+SQL Text   : SELECT SUM(AMOUNT_SOLD),COUNT(1),PROD_ID,TIME_ID FROM SALES_BKP
+             S,CUSTOMERS c
+                 WHERE S.CUST_ID=C.CUST_ID
+                 AND C.CUST_ID=987
+                 AND CUST_GENDER='M'
+                 GROUP BY PROD_ID,TIME_ID
+                 ORDER BY PROD_ID
+
+-------------------------------------------------------------------------------
+FINDINGS SECTION (2 findings)
+-------------------------------------------------------------------------------
+
+1- Statistics Finding
+---------------------
+  Table "SH"."SALES_BKP" was not analyzed.
+
+  Recommendation
+  --------------
+  - Consider collecting optimizer statistics for this table.
+    execute dbms_stats.gather_table_stats(ownname => 'SH', tabname =>
+            'SALES_BKP', estimate_percent => DBMS_STATS.AUTO_SAMPLE_SIZE,
+            method_opt => 'FOR ALL COLUMNS SIZE AUTO');
+
+  Rationale
+  ---------
+    The optimizer requires up-to-date statistics for the table in order to
+    select a good execution plan.
+
+2- Index Finding (see explain plans section below)
+--------------------------------------------------
+  The execution plan of this statement can be improved by creating one or more
+  indices.
+
+  Recommendation (estimated benefit: 100%)
+  ----------------------------------------
+  - Consider running the Access Advisor to improve the physical schema design
+    or creating the recommended index.
+    create index SH.IDX$$_0A6A0001 on SH.SALES_BKP('CUST_ID');
+
+  Rationale
+  ---------
+    Creating the recommended indices significantly improves the execution plan
+    of this statement. However, it might be preferable to run "Access Advisor"
+    using a representative SQL workload as opposed to a single statement. This
+    will allow to get comprehensive index recommendations which takes into
+    account index maintenance overhead and additional space consumption.
+
+-------------------------------------------------------------------------------
+EXPLAIN PLANS SECTION
+-------------------------------------------------------------------------------
+
+1- Original
+-----------
+Plan hash value: 1215535659
+
+----------------------------------------------------------------------------------------------
+| Id  | Operation                     | Name         | Rows  | Bytes | Cost (%CPU)| Time     |
+----------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT              |              |   144 |  7920 |  1037   (4)| 00:00:13 |
+|   1 |  SORT GROUP BY                |              |   144 |  7920 |  1037   (4)| 00:00:13 |
+|   2 |   NESTED LOOPS                |              |   144 |  7920 |  1036   (4)| 00:00:13 |
+|*  3 |    TABLE ACCESS BY INDEX ROWID| CUSTOMERS    |     1 |     7 |     2   (0)| 00:00:01 |
+|*  4 |     INDEX UNIQUE SCAN         | CUSTOMERS_PK |     1 |       |     1   (0)| 00:00:01 |
+|*  5 |    TABLE ACCESS FULL          | SALES_BKP    |   144 |  6912 |  1034   (4)| 00:00:13 |
+----------------------------------------------------------------------------------------------
+ 
+Predicate Information (identified by operation id):
+---------------------------------------------------
+ 
+   3 - filter("CUST_GENDER"='M')
+   4 - access("C"."CUST_ID"=987)
+   5 - filter("S"."CUST_ID"=987)
+
+2- Using New Indices
+--------------------
+Plan hash value: 4205224156
+
+------------------------------------------------------------------------------------------------
+| Id  | Operation                     | Name           | Rows  | Bytes | Cost (%CPU)| Time     |
+------------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT              |                |   180 |  9900 |    38   (3)| 00:00:01 |
+|   1 |  SORT GROUP BY                |                |   180 |  9900 |    38   (3)| 00:00:01 |
+|   2 |   NESTED LOOPS                |                |   180 |  9900 |    37   (0)| 00:00:01 |
+|*  3 |    TABLE ACCESS BY INDEX ROWID| CUSTOMERS      |     1 |     7 |     2   (0)| 00:00:01 |
+|*  4 |     INDEX UNIQUE SCAN         | CUSTOMERS_PK   |     1 |       |     1   (0)| 00:00:01 |
+|   5 |    TABLE ACCESS BY INDEX ROWID| SALES_BKP      |   180 |  8640 |    35   (0)| 00:00:01 |
+|*  6 |     INDEX RANGE SCAN          | IDX$$_0A6A0001 |   180 |       |     2   (0)| 00:00:01 |
+------------------------------------------------------------------------------------------------
+ 
+Predicate Information (identified by operation id):
+---------------------------------------------------
+ 
+   3 - filter("CUST_GENDER"='M')
+   4 - access("C"."CUST_ID"=987)
+   6 - access("S"."CUST_ID"=987)
+
+-------------------------------------------------------------------------------
