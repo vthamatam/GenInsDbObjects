@@ -1,4 +1,5 @@
 /* Formatted on 17-May-17 9:51:33 PM (QP5 v5.300) */
+--version 2
 DECLARE
     l_insured_dtls   XXGEN_INSURED_OBJ_TAB_TYPE
                          := XXGEN_INSURED_OBJ_TAB_TYPE ();

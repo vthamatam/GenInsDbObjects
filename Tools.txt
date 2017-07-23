@@ -1,0 +1,5 @@
+https://venuthamatam@bitbucket.org/venuthamatam/geninsure.git
+https://www.atlassian.com/ondemand/signup/?product=jira-software.ondemand&utm_source=bitbucket&utm_medium=button&utm_campaign=app_switcher&utm_content=trial_button
+
+git clone https://venuthamatam@bitbucket.org/venuthamatam/geninsure.git
+
